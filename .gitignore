@@ -1,0 +1,17 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.py[cod]
+
+# PyTorch
+/.torch/
+
+# Virtual Environment
+.venv/
+env/
+env.bak/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
