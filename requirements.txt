@@ -3,3 +3,5 @@ scikit-image
 matplotlib
 torchvision
 pandas
+torch
+tqdm
