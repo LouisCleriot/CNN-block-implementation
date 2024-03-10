@@ -29,4 +29,4 @@ The models are implemented in models.py. The models implemented are:
 
 ## Training
 
-The training script is train_net.py. The script is originally written by Mamadou Mountagha BAH & Pierre-Marc Jodoin of the University of Sherbrooke and used in IFT780 "Neural Network" for practicals. The script is modified to train more diverse models.
+The training script is train_net.py. The script is originally written by Mamadou Mountagha BAH & Pierre-Marc Jodoin of the University of Sherbrooke and used in IFT780 "Neural Network" for practicals. The script will be modified to train more diverse models.
