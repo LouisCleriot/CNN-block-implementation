@@ -12,24 +12,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-class SimpleCNNBlock(nn.Module):
-    """
-    this block is an example of a simple conv-relu-conv-relu block
-    with 3x3 convolutions
-    """
-
-    def __init__(self, in_channels):
-        super(SimpleCNNBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=1, padding=1)
-
-    def forward(self, x):
-        output = F.relu(self.conv1(x))
-        output = F.relu(self.conv2(output))
-        return output
-
-
 class ResidualBlock(nn.Module):
     """
     this block is the building block of the residual network. it takes an 
@@ -39,33 +21,44 @@ class ResidualBlock(nn.Module):
     
     #Version ReLu-only pre-activation
 
-    def __init__(self, in_channels,out_channels):
+    def __init__(self, in_channels,out_channels, depth_wise=True, bottleneck=False):
         super(ResidualBlock, self).__init__()
-        #check if out_channels is even or odd
         midle_channels =  in_channels + out_channels 
         if midle_channels % 2 == 0:
             midle_channels = midle_channels // 2
         else:
             midle_channels = midle_channels // 2 + 1
+            
+        current = in_channels
         
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=midle_channels, kernel_size=3, stride=1, padding=1)
-        self.batchNorm1 = nn.BatchNorm2d(midle_channels)
-        self.conv2 = nn.Conv2d(in_channels=midle_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1)
-        self.batchNorm2 = nn.BatchNorm2d(out_channels)
+        conv_layers = nn.ModuleList()
         
-        self.skip = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
+        if bottleneck:
+            conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=midle_channels, kernel_size=1, stride=1, padding=0))
+            conv_layers.append(nn.BatchNorm2d(midle_channels))
+            conv_layers.append(nn.ReLu())
+            current = midle_channels
+        
+        if depthwise :
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=out_channels, kernel_size=1, stride=1, padding=0))
+        else:
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=out_channels, kernel_size=3, stride=1, padding=1))
+        
+        conv_layers.append(nn.BatchNorm2d(out_channels))    
+        conv_layers.append(nn.ReLu())
+        conv_layers.append(nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0))
+        conv_layers.append(nn.BatchNorm2d(out_channels))
+        self.mainbranch = nn.Sequential(*conv_layers)
+        self.skip = nn.Sequential()
+        if in_channels != out_channels :
+            self.skip = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
         
     def forward(self, x):
-        output = F.relu(x)
-        output = self.conv1(output)
-        output = self.batchNorm1(output)
-        output = F.relu(output)
-        output = self.conv2(output)
-        output = self.batchNorm2(output)
-        
+        output = self.mainbranch(x)
         output += self.skip(x)
         
-        return output
+        return F.relu(output)
         
         
 
@@ -77,27 +70,44 @@ class DenseBlock(nn.Module):
     and then concatenate the output with the original input
     """
     #Dense block with 3 layers (bn-relu-conv1-conv2)
-    def __init__(self,in_channels):
+    def __init__(self, in_channels, depth_wise=True, bottleneck=False):
         super(DenseBlock, self).__init__()
-        self.batchNorm1 = nn.BatchNorm2d(in_channels)
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=1, padding=1)
-        self.batchNorm2 = nn.BatchNorm2d(in_channels)
-        self.conv2 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=1, padding=1)
-        self.batchNorm3 = nn.BatchNorm2d(in_channels)
-        self.conv3 = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=1, padding=1)
+        midle_channels =  in_channels 
+        if in_channels % 2 == 0:
+            midle_channels = midle_channels // 2
+        else:
+            midle_channels = midle_channels // 2 + 1
+            
+        current = in_channels
+        
+        conv_layers = nn.ModuleList()
+        
+        if bottleneck:
+            conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=midle_channels, kernel_size=1, stride=1, padding=0))
+            conv_layers.append(nn.BatchNorm2d(midle_channels))
+            conv_layers.append(nn.ReLu())
+            current = midle_channels
+        
+        if depthwise :
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=1, stride=1, padding=0))
+        else:
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=3, stride=1, padding=1))
+        
+        conv_layers.append(nn.BatchNorm2d(out_channels))    
+        conv_layers.append(nn.ReLu())
+        self.dense = nn.Sequential(*conv_layers)
+        self.regularise = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels*2, out_channels=in_channels*2, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(nn.BatchNorm2d(out_channels)*2),
+            nn.ReLu()
+            )
         
     def forward(self, x):
             
-        output = self.batchNorm1(x)
-        output = self.conv1(F.relu(output))
-        
-        output = self.batchNorm2(output)
-        output = self.conv2(F.relu(output))
-        
-        output = self.batchNorm3(output)
-        output = self.conv3(F.relu(output))
-        
+        output = self.dense(x)
         output = torch.cat((x, output), 1)
+        output = self.regularise(output)
            
         return output
 
