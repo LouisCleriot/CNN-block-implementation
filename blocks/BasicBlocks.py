@@ -112,34 +112,34 @@ class DenseBlock(nn.Module):
         return output
 
 
-class BottleneckBlock(nn.Module):
+class ConvBottleneck(nn.Module):
     """
     This block takes an input with in_channels reduces number of channels by a certain
     parameter "downsample" through kernels of size 1x1, 3x3, 1x1 respectively.
     """
 
-    def __init__(self,in_channels,downsample):
+    def __init__(self,in_channels,downsample, depth_wise=False):
         super(BottleneckBlock, self).__init__()
-        
+        conv_layers = nn.ModuleList()
         median_channels = in_channels // downsample
         
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0)
-        self.batchNorm1 = nn.BatchNorm2d(median_channels)
-        self.conv2 = nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1)
-        self.batchNorm2 = nn.BatchNorm2d(median_channels)
-        self.conv3 = nn.Conv2d(in_channels=median_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0)
-        self.batchNorm3 = nn.BatchNorm2d(in_channels)
-        
+        conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0))
+        conv_layers.append(nn.BatchNorm2d(median_channels))
+        conv_layers.append(nn.ReLu())
+        if depth_wise :
+            conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1, groups=median_channels))
+            conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0))
+        else :  
+            conv_layers.append(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1)
+        conv_layers.append(nn.BatchNorm2d(median_channels))
+        conv_layers.append(nn.ReLu())
+        conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0))
+        conv_layers.append(nn.BatchNorm2d(in_channels))
+        conv_layers.append(nn.ReLu())
+        self.conv_blocks = nn.Sequential(*conv_layers)        
     def forward(self, x):
         
-        output = self.conv1(F.relu(x))
-        output = self.batchNorm1(output)
-        
-        output = self.conv2(F.relu(output))
-        output = self.batchNorm2(output)
-        
-        output = self.conv3(F.relu(output))
-        output = self.batchNorm3(output)
+        output = self.conv_blocks(x)
         
         return output
     
