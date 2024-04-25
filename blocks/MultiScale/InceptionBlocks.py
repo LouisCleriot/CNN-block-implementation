@@ -175,7 +175,7 @@ class InceptionModulev2Pooling(nn.Module):
     Inception module that reduces the grid-size while ex-
     pands the filter banks.
     """
-    def __init__(self,in_channels, out3x3, out2_3x3, outmaxpool):
+    def __init__(self,in_channels, out3x3, out2_3x3):
         self.maxpool = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             )
