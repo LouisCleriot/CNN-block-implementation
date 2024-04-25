@@ -106,11 +106,11 @@ class ConvBottleneck(nn.Module):
     parameter "downsample" through kernels of size 1x1, 3x3, 1x1 respectively.
     """
 
-    def __init__(self,in_channels,downsample, depth_wise=False):
-        super(BottleneckBlock, self).__init__()
+    def __init__(self,in_channels,downsample, depth_wise=False, residual=False):
+        super(ConvBottleneck, self).__init__()
         conv_layers = nn.ModuleList()
         median_channels = in_channels // downsample
-        
+        self.residual = residual
         conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0))
         conv_layers.append(nn.BatchNorm2d(median_channels))
         conv_layers.append(nn.ReLu())
@@ -123,10 +123,13 @@ class ConvBottleneck(nn.Module):
         conv_layers.append(nn.ReLu())
         conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0))
         conv_layers.append(nn.BatchNorm2d(in_channels))
-        conv_layers.append(nn.ReLu())
+        if not residual:
+            conv_layers.append(nn.ReLu())
         self.conv_blocks = nn.Sequential(*conv_layers)        
     def forward(self, x):
         
         output = self.conv_blocks(x)
-        
+        if self.residual:
+            output += x
+            output = F.relu(output)
         return output
