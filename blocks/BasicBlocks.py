@@ -27,7 +27,7 @@ class ResidualBlock(nn.Module):
             conv_layers.append(nn.ReLu())
             current = midle_channels
         
-        if depthwise :
+        if depth_wise :
             conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current))
             conv_layers.append(nn.Conv2d(in_channels=current, out_channels=out_channels, kernel_size=1, stride=1, padding=0))
         else:
@@ -76,18 +76,18 @@ class DenseBlock(nn.Module):
             conv_layers.append(nn.ReLu())
             current = midle_channels
         
-        if depthwise :
+        if depth_wise :
             conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current))
             conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=1, stride=1, padding=0))
         else:
             conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=3, stride=1, padding=1))
         
-        conv_layers.append(nn.BatchNorm2d(out_channels))    
+        conv_layers.append(nn.BatchNorm2d(in_channels))    
         conv_layers.append(nn.ReLu())
         self.dense = nn.Sequential(*conv_layers)
         self.regularise = nn.Sequential(
             nn.Conv2d(in_channels=in_channels*2, out_channels=in_channels*2, kernel_size=1, stride=1, padding=0),
-            nn.BatchNorm2d(nn.BatchNorm2d(out_channels)*2),
+            nn.BatchNorm2d(nn.BatchNorm2d(in_channels)*2),
             nn.ReLu()
             )
         
