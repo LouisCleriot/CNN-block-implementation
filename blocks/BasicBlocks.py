@@ -22,25 +22,25 @@ class ResidualBlock(nn.Module):
         conv_layers = nn.ModuleList()
         
         if bottleneck:
-            conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=midle_channels, kernel_size=1, stride=1, padding=0))
+            conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=midle_channels, kernel_size=1, stride=1, padding=0,bias=False))
             conv_layers.append(nn.BatchNorm2d(midle_channels))
-            conv_layers.append(nn.ReLu())
+            conv_layers.append(nn.ReLU())
             current = midle_channels
         
         if depth_wise :
-            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current))
-            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=out_channels, kernel_size=1, stride=1, padding=0))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current,bias=False))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=out_channels, kernel_size=1, stride=1, padding=0,bias=False))
         else:
-            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=out_channels, kernel_size=3, stride=1, padding=1))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=out_channels, kernel_size=3, stride=1, padding=1,bias=False))
         
         conv_layers.append(nn.BatchNorm2d(out_channels))    
-        conv_layers.append(nn.ReLu())
-        conv_layers.append(nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0))
+        conv_layers.append(nn.ReLU())
+        conv_layers.append(nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0,bias=False))
         conv_layers.append(nn.BatchNorm2d(out_channels))
         self.mainbranch = nn.Sequential(*conv_layers)
         self.skip = nn.Sequential()
         if in_channels != out_channels :
-            self.skip = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0)
+            self.skip = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=1, padding=0,bias=False)
         
     def forward(self, x):
         output = self.mainbranch(x)
@@ -71,24 +71,24 @@ class DenseBlock(nn.Module):
         conv_layers = nn.ModuleList()
         
         if bottleneck:
-            conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=midle_channels, kernel_size=1, stride=1, padding=0))
+            conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=midle_channels, kernel_size=1, stride=1, padding=0,bias=False))
             conv_layers.append(nn.BatchNorm2d(midle_channels))
             conv_layers.append(nn.ReLu())
             current = midle_channels
         
         if depth_wise :
-            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current))
-            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=1, stride=1, padding=0))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=current, kernel_size=3, stride=1, padding=1, groups=current,bias=False))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=1, stride=1, padding=0,bias=False))
         else:
-            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=3, stride=1, padding=1))
+            conv_layers.append(nn.Conv2d(in_channels=current, out_channels=in_channels, kernel_size=3, stride=1, padding=1,bias=False))
         
         conv_layers.append(nn.BatchNorm2d(in_channels))    
-        conv_layers.append(nn.ReLu())
+        conv_layers.append(nn.ReLU())
         self.dense = nn.Sequential(*conv_layers)
         self.regularise = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels*2, out_channels=in_channels*2, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(in_channels=in_channels*2, out_channels=in_channels*2, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(nn.BatchNorm2d(in_channels)*2),
-            nn.ReLu()
+            nn.ReLU()
             )
         
     def forward(self, x):
@@ -111,20 +111,20 @@ class ConvBottleneck(nn.Module):
         conv_layers = nn.ModuleList()
         median_channels = in_channels // downsample
         self.residual = residual
-        conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0))
+        conv_layers.append(nn.Conv2d(in_channels=in_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0,bias=False))
         conv_layers.append(nn.BatchNorm2d(median_channels))
-        conv_layers.append(nn.ReLu())
+        conv_layers.append(nn.ReLU())
         if depth_wise :
-            conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1, groups=median_channels))
-            conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0))
+            conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1, groups=median_channels,bias=False))
+            conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0,bias=False))
         else :  
             conv_layers.append(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1)
         conv_layers.append(nn.BatchNorm2d(median_channels))
-        conv_layers.append(nn.ReLu())
-        conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0))
+        conv_layers.append(nn.ReLU())
+        conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0,bias=False))
         conv_layers.append(nn.BatchNorm2d(in_channels))
         if not residual:
-            conv_layers.append(nn.ReLu())
+            conv_layers.append(nn.ReLU())
         self.conv_blocks = nn.Sequential(*conv_layers)        
     def forward(self, x):
         

@@ -8,7 +8,7 @@ class HierarshicalSplitBlock(nn.Module):
     through a 3x3 bn relu, his output is split in 2, the first
     half is concatenated with next group and the second half is
     passed to the output. The process is repeated until the last
-
+    https://arxiv.org/pdf/2010.07621
     Args:
         s (int): the number of groups to split the input
         in_channels (int): the number of input channels
@@ -23,7 +23,7 @@ class HierarshicalSplitBlock(nn.Module):
         for i in range(1, s):
             in_channels = group_size + added_channels
             self.groups.append(nn.Sequential(
-                nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(in_channels),
                 nn.ReLU(inplace=True)
             ))
@@ -41,5 +41,4 @@ class HierarshicalSplitBlock(nn.Module):
             output.append(group2)
             groups[i+1] = torch.cat((groups[i+1], group1), 1)
         return output
-            
-        
+

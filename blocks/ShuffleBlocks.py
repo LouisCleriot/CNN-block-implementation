@@ -41,14 +41,14 @@ class ShuffleModule(nn.Module):
         if stride != 1 :
             pooling = True
         self.conv1x1 = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0, groups=groups),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0, groups=groups,bias=False),
             nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True)
         )
         self.block = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels,bias=False),
             nn.BatchNorm2d(in_channels),
-            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0, groups=groups),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0, groups=groups,bias=False),
             nn.BatchNorm2d(in_channels)
         )
         self.pool = nn.Sequential()
@@ -73,6 +73,7 @@ class InterleavedGroupConvolutionModule(nn.Module):
     secondary group convolution to blend the channels. 
     L primary partitions of M channels each, 
     M secondary partitions of L channels each.
+    https://arxiv.org/pdf/1707.02725.pdf
     Args:
         L (int): the number of primary partitions 
         M (int): the number of secondary partitions
@@ -83,8 +84,8 @@ class InterleavedGroupConvolutionModule(nn.Module):
         self.L = L
         self.M = M
         self.in_channels = in_channels
-        self.primary = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, groups=L)
-        self.secondary = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=1, groups=M)
+        self.primary = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, groups=L,bias=False)
+        self.secondary = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=1, groups=M,bias=False)
         self.bn = nn.BatchNorm2d(in_channels)
         self.relu = nn.ReLU(inplace=True)
         self.interleaved = InterleavedModule()

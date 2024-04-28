@@ -15,7 +15,7 @@ class SqueezeAndExciteBlock(nn.Module):
         median_channels = in_channels // downsample
         self.fully_connected_1 = nn.Linear(in_channels, median_channels)
         self.fully_connected_2 = nn.Linear(median_channels, in_channels)
-        
+
     def forward(self, x):
         
         output = F.adaptive_avg_pool2d(x, (1,1))
@@ -42,7 +42,7 @@ class EfficientChannelAttention(nn.Module):
         t = int(abs((torch.log2(torch.tensor(in_channels, dtype=torch.float32)) + beta) / gamma))
         kernel = t if t % 2 != 0 else t + 1
         self.attentionlayer = nn.Conv1d(1,1,kernel_size=t,stride=1,padding=kernel//2, bias=False)
-        
+
     def forward(self,x):
         #global average pooling
         output = F.adaptive_avg_pool2d(x, (1,1))

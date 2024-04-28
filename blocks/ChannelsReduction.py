@@ -17,18 +17,18 @@ class FireBlock(nn.Module):
         super(FireBlock,self).__init__()
         
         self.squeeze = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=squeeze, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(in_channels=in_channels, out_channels=squeeze, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(squeeze),
             nn.ReLU(inplace=True)
         )
         self.expand1 = nn.Sequential(
-            nn.Conv2d(in_channels=squeeze, out_channels=expand1, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(in_channels=squeeze, out_channels=expand1, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(squeeze),
             nn.ReLU(inplace=True)
         )
         self.expand2 = nn.Sequential( 
-            nn.Conv2d(in_channels=squeeze, out_channels=squeeze, kernel_size=3, stride=1, padding=1, groups=squeeze),
-            nn.Conv2d(in_channels=squeeze, out_channels=expand3, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(in_channels=squeeze, out_channels=squeeze, kernel_size=3, stride=1, padding=1, groups=squeeze,bias=False),
+            nn.Conv2d(in_channels=squeeze, out_channels=expand3, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(expand3),
             nn.ReLU(inplace=True)
         )
@@ -78,13 +78,13 @@ class SlimConv(nn.Module):
                 nn.Conv1d(1,1,kernel_size=kernel,stride=1,padding=kernel//2, bias=False),
             )
         self.upperBranch = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels//2, out_channels=in_channels//kup, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=in_channels//2, out_channels=in_channels//kup, kernel_size=3, stride=1, padding=1,bias=False),
         )
         self.lowerBranch = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels//2, out_channels=in_channels//klow, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(in_channels=in_channels//2, out_channels=in_channels//klow, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(in_channels//klow),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=in_channels//klow, out_channels=in_channels//klow, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=in_channels//klow, out_channels=in_channels//klow, kernel_size=3, stride=1, padding=1,bias=False),
         )
         self.BN = nn.BatchNorm2d(in_channels//kup + in_channels//klow) 
     def forward(self, x):
