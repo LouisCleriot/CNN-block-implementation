@@ -67,7 +67,7 @@ class SlimConv(nn.Module):
                 nn.AdaptiveAvgPool2d(1),
                 nn.Flatten(),
                 nn.Linear(in_channels, median_channels),
-                nn.ReLU(),
+                nn.ReLU(inplace=True),
                 nn.Linear(median_channels, in_channels),
                 nn.Sigmoid(),
                 nn.Unflatten(1, (in_channels, 1, 1))
