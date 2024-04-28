@@ -65,17 +65,22 @@ class SlimConv(nn.Module):
             median_channels = in_channels // downsample
             self.attention = nn.Sequential(
                 nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
                 nn.Linear(in_channels, median_channels),
                 nn.ReLU(),
                 nn.Linear(median_channels, in_channels),
-                nn.Sigmoid()
+                nn.Sigmoid(),
+                nn.Unflatten(1, (in_channels, 1, 1))
             )
         else  :
             t = int(abs((torch.log2(torch.tensor(in_channels, dtype=torch.float32)) + beta) / gamma))
             kernel = t if t % 2 != 0 else t + 1
             self.attention = nn.Sequential(
                 nn.AdaptiveMaxPool2d(1),
+                nn.Flatten(),
                 nn.Conv1d(1,1,kernel_size=kernel,stride=1,padding=kernel//2, bias=False),
+                nn.Sigmoid(),
+                nn.Unflatten(1, (in_channels, 1, 1))
             )
         self.upperBranch = nn.Sequential(
             nn.Conv2d(in_channels=in_channels//2, out_channels=in_channels//kup, kernel_size=3, stride=1, padding=1,bias=False),
