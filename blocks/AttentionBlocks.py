@@ -37,9 +37,11 @@ class EfficientChannelAttention(nn.Module):
     https://doi.org/10.48550/arXiv.1910.03151
     """
     
-    def __init__(self,in_channels):
+    def __init__(self,in_channels,gamma=2,beta=1):
         super(EfficientChannelAttention,self).__init__()
-        self.attentionlayer = nn.Conv1d(1,1,kernel_size=5,stride=1,padding=2)
+        t = int(abs((torch.log2(torch.tensor(in_channels, dtype=torch.float32)) + beta) / gamma))
+        kernel = t if t % 2 != 0 else t + 1
+        self.attentionlayer = nn.Conv1d(1,1,kernel_size=t,stride=1,padding=kernel//2, bias=False)
         
     def forward(self,x):
         #global average pooling
