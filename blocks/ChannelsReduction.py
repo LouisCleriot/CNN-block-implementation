@@ -94,7 +94,13 @@ class SlimConv(nn.Module):
         #modulate the input with the attention weights
         xupper = x * attention
         xlower = x * attentionFlip
+        #split in half and add each x
+        xupper1,xupper2 = torch.chunk(xupper,2,1)
+        xupper = xupper1 + xupper2 
+        xlower1,xlower2 = torch.chunk(xlower,2,1)
+        xlower = xlower1+xlower2
+        #go through each branch
         upper = self.upperBranch(xupper)
         lower = self.lowerBranch(xlower)
-        output = self.BN(torch.cat((upper, lower), 1))
+        output = F.relu(self.BN(torch.cat((upper, lower), 1)))
         return output
