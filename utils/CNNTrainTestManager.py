@@ -4,6 +4,7 @@
 University of Sherbrooke
 Date:
 Authors: Mamadou Mountagha BAH & Pierre-Marc Jodoin
+Modified: Louis CLERIOT
 License:
 Other: Suggestions are welcome
 """
@@ -29,7 +30,8 @@ class CNNTrainTestManager(object):
                  optimizer_factory: Callable[[torch.nn.Module], torch.optim.Optimizer],
                  batch_size=1,
                  validation=None,
-                 use_cuda=False):
+                 use_cuda=False,
+                 metric="accuracy"):
         """
         Args:
             model: model to train
@@ -48,7 +50,6 @@ class CNNTrainTestManager(object):
                           "use_cuda=False to {}()."
                           .format(self.__class__.__name__), RuntimeWarning)
             device_name = 'cpu'
-
         self.device = torch.device(device_name)
         if validation is not None:
             self.data_manager = DataManager(trainset, testset, batch_size=batch_size, validation=validation)
@@ -59,6 +60,10 @@ class CNNTrainTestManager(object):
         self.optimizer = optimizer_factory(self.model)
         self.model = self.model.to(self.device)
         self.use_cuda = use_cuda
+        if metric == "accuracy":
+            self.metric = self.accuracy
+        elif metric == "f1":
+            self.metric = self.f1_score
         self.metric_values = {}
 
     def train(self, num_epochs):
@@ -110,7 +115,7 @@ class CNNTrainTestManager(object):
 
                     # Save losses for plotting purposes
                     train_losses.append(loss.item())
-                    train_accuracies.append(self.accuracy(train_outputs, train_labels))
+                    train_accuracies.append(self.metric(train_outputs, train_labels))
 
                     # print metrics along progress bar
                     train_loss += loss.item()
@@ -148,7 +153,7 @@ class CNNTrainTestManager(object):
                 # compute loss function
                 loss = self.loss_fn(val_outputs, val_labels)
                 validation_losses.append(loss.item())
-                validation_accuracies.append(self.accuracy(val_outputs, val_labels))
+                validation_accuracies.append(self.metric(val_outputs, val_labels))
                 validation_loss += loss.item()
 
         self.metric_values['val_loss'].append(np.mean(validation_losses))
@@ -172,6 +177,23 @@ class CNNTrainTestManager(object):
         predicted = outputs.argmax(dim=1)
         correct = (predicted == labels).sum().item()
         return correct / labels.size(0)
+    
+    def f1_score(self, outputs, labels):
+        """
+        Computes the f1_score of the model
+        Args:
+            outputs: outputs predicted by the model
+            labels: real outputs of the data
+        Returns:
+            f1_score of the model
+        """
+        predicted = outputs.argmax(dim=1)
+        tp = (predicted * labels).sum().item()
+        fp = ((predicted - labels) == 1).sum().item()
+        fn = ((predicted - labels) == -1).sum().item()
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        return 2 * precision * recall / (precision + recall)
 
     def evaluate_on_test_set(self):
         """
@@ -185,7 +207,7 @@ class CNNTrainTestManager(object):
             for data in test_loader:
                 test_inputs, test_labels = data[0].to(self.device), data[1].to(self.device)
                 test_outputs = self.model(test_inputs)
-                accuracies += self.accuracy(test_outputs, test_labels)
+                accuracies += self.metric(test_outputs, test_labels)
         print("Accuracy on the test set: {:05.3f} %".format(100 * accuracies / len(test_loader)))
 
     def plot_metrics(self, out_file_name='fig.png'):
