@@ -9,7 +9,8 @@ class MultiGridConv(nn.Module):
     is nearest-neighbor interpolation. Ouput the same number different scale with the same
     number of channels for each. iT's advise to use a number of channels/2 for each scale 
     from the finest to the coarsest.
-
+    https://arxiv.org/pdf/1611.07661
+    
     Args:
         nb_scale (int): number of scales in the pyramid (number of input tensors)
         in_channels (tuple): number of input channels for each scale (from fine to coarse)
@@ -57,4 +58,47 @@ class MultiGridConv(nn.Module):
         output.append(self.branches_conv[-1](x))
         return output
             
-            
+class ASPPModule(nn.Module):
+    """This module is used in deeplabv3 to capture multi-scale context by applying multiple parallel
+    atrous convolution with different rates, a 1x1 conv and a global pooling. The output of the 
+    parallel branches are concatenated and processed by a 1x1 convolution to reduce the number of channels.
+    https://arxiv.org/pdf/1706.05587
+
+    Args:
+        in_channels (int): number of input channels
+        size (tuple): input size (height, width)
+        out_channels (int): number of output channels (256 in the original paper)
+        rates (tuple): rates for the atrous convolution (6,12,18 in the original paper)
+        branches_out_channels (tuple): number of output channels for each branch (64 each in the original paper)
+    """
+    def __init__(self, in_channels, size, out_channels=256, rates=(6,12,18), branches_out_channels=(64,64,64,64,64)):
+        super(ASPPModule, self).__init__()
+        h,w = size
+        self.branches = nn.ModuleList()
+        for rate in rates:
+            rate_out_channel = branches_out_channels[rates.index(rate)]
+            self.branches.append(nn.Sequential(
+                nn.Conv2d(in_channels, rate_out_channel, kernel_size=3, padding=rate, dilation=rate, bias=False),
+                nn.BatchNorm2d(rate_out_channel),
+                nn.ReLU(inplace=True)))
+        self.branches.append(nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(in_channels, branches_out_channels[-1], kernel_size=1, bias=False),
+            nn.BatchNorm2d(branches_out_channels[-1]),
+            nn.ReLU(inplace=True)),
+            nn.Upsample(size=(h,w), mode='bilinear'))
+        self.branches.append(nn.Sequential(
+            nn.Conv2d(in_channels,branches_out_channels[-2], kernel_size=1, bias=False),
+            nn.BatchNorm2d(branches_out_channels[-2]),
+            nn.ReLU(inplace=True)))
+        self.conv = nn.Sequential(
+            nn.Conv2d(2+len(rates), out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True))
+        
+    def forward(self, x):
+        output = []
+        for branch in self.branches:
+            output.append(branch(x))
+        output = torch.cat(output, 1)
+        return self.conv(output)
