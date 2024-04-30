@@ -26,7 +26,6 @@ class SqueezeAndExciteBlock(nn.Module):
         
         output = output.view(output.size(0), -1, 1, 1)
         output = x * output
-        output = torch.cat((x, output), 1)
         return output
     
 class EfficientChannelAttention(nn.Module):
