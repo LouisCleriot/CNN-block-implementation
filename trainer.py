@@ -7,6 +7,14 @@ from torchvision import datasets
 from importlib.util import spec_from_file_location, module_from_spec 
 import os
 import models
+from sys import exit
+
+base_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+dataset_directory = './datasets_class'
+model_directory = './models'
 
 class Trainer():
     def __init__ (self, model="CnnVanilla", dataset="cifar10", optimizer="Adam", batch_size=64, num_epochs=10, validation=0.1, learning_rate=0.01, data_aug=False, loss="ce", metric="accuracy", out="fig.png"):
@@ -16,14 +24,13 @@ class Trainer():
         if hasattr(datasets, dataset):
             print(f"Dataset {dataset} found in torchvision.datasets")
             # Download the train and test set and apply transform on it
-            train_set = getattr(datasets, dataset)(root='./datasets', train=True, download=True)
-            test_set = getattr(datasets, dataset)(root='./datasets', train=False, download=True)
-            nb_classes = len(self.train_set.classes)
+            train_set = getattr(datasets, dataset)(root='./datasets', train=True, download=True, transform=base_transform)
+            test_set = getattr(datasets, dataset)(root='./datasets', train=False, download=True, transform=base_transform)
+            nb_classes = len(train_set.classes)
         else:
             print(f"Dataset {dataset} not found in torchvision.datasets")
             print("checking for custom dataset")
             #check if dataset is in datasets_class
-            dataset_directory = './datasets_class'
             dataset_file = dataset + '.py'
             dataset_path = os.path.join(dataset_directory, dataset_file)
             if os.path.exists(dataset_path):
@@ -49,11 +56,21 @@ class Trainer():
             print("Please provide a valid optimizer")
             exit()
         
-        #load model from models
-        if hasattr(models, model):
-            model = getattr(models, model)(num_classes=nb_classes)
+        
+        model_file = model + '.py'
+        model_path = os.path.join(model_directory, model_file)
+        if os.path.exists(model_path):
+            print(f"Model {model} found in models")
+            module_name = f"models.{model}"
+            spec = spec_from_file_location(module_name, model_path)
+            model_module = module_from_spec(spec)
+            spec.loader.exec_module(model_module)
+            
+            model_class = getattr(model_module, model)
+            model = model_class(num_classes=nb_classes)
+            
         else:
-            print("Model not found in models")
+            print(f"Model {model} not found in models")
             print("Please provide a valid model")
             exit()
         self.model_trainer = CNNTrainTestManager(model=model,
