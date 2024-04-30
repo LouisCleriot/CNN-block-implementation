@@ -16,5 +16,5 @@ env.bak/
 .vscode/
 *.code-workspace
 
-# Data set
-datasets/cifar-10-batches-py/
+#all directories from datasets
+datasets/*/
