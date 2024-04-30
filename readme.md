@@ -1,32 +1,41 @@
 # Implementation of layers of CNN in PyTorch
 
-## Download toy dataset
+## Datasets
 
-Use the script get_datasets.sh in the datasets folder to download the toy dataset.
+You can use both pytorch or custom datasets.
 
-```bash
-datasets/get_datasets.sh
-```
+### Pytorch datasets
+
+There is scripts in the `datasets` folder to download datasets like CIFAR 10 and FASHIONMNISST, you can also just use the code from the trainer with the name form torchvision.datasets. and it will download the dataset for you if not already downloaded.
+
+### Custom datasets
+
+Create the dataset directory in the `datasets` folder. It should have the same format as `torchvision.datasets.ImageFolder` where the images are in the subdirectories of the dataset directory.
+
+The script `utils/train_test_split.sh` can be used to split the dataset into training and testing datasets. The script will create a `Train` and `Test` directory in the dataset directory. Each class will have a subdirectory in the `Train` and `Test` directory.
 
 ## Layers implemented
 
-All the layers are implemented in CNNBlocks.py. The layers implemented are:
+Different layer are implemented from scratch using their scientific papers and pytorch. They are grouped into different categories :
 
-- ResidualBlock
-- DenseBlock
-- BottleneckBlock
-- SqueezeExcitationBlock
-- InceptionBlock
-
-## models
-
-The models are implemented in models.py. The models implemented are:
-
-- ResNet
-- DenseNet
-- InceptionNet
-- Custom model called CustomNet
+- Basic blocks (Residual / Dense / ConvBottleneck)
+- Attention (SqueezeAndExciteBlock / EfficientChannelAttention)
+- Channels reduction (FireBlock / SlimeConv)
+- Shuffle Blocks (InterleavedModule / ShuffleModule / InterleavedGroupConvolutionModule)
+- Multi-scale
+  - Inception (InceptionModuleV1 / InceptionModuleV2Base / InceptionModuleV2Factorize / InceptionModuleV2Wide / InceptionModulev2Pooling)
+  - Channel wise (HierarshicalSplitBlock)
+  - Dimension wise (MultiGridConv / ASPPModule)
 
 ## Training
 
-The training script is train_net.py. The script is originally written by Mamadou Mountagha BAH & Pierre-Marc Jodoin of the University of Sherbrooke and used in IFT780 "Neural Network" for practicals. The script will be modified to train more diverse models.
+The training is done using the `Trainer` class. It's instantiated in the notebook `train.ipynb`. The classe is in early stage
+and will be improved in the future.(custom loss, choice of transform, ...)
+
+## How to use the repository
+
+1. Find the dataset you want, either in the pytorch datasets or create a custom dataset.
+2. Create a model python file in the `models` using same structure as the other models.
+3. Modify the notebook `train.ipynb` to modify the training parameters, model and dataset.
+4. Run the notebook to train the model.
+5. Visualize the results in the png figures
