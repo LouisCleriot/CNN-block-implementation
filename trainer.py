@@ -17,7 +17,7 @@ dataset_directory = './datasets_class'
 model_directory = './models'
 
 class Trainer():
-    def __init__ (self, model="CnnVanilla", dataset="cifar10", optimizer="Adam", batch_size=64, num_epochs=10, validation=0.1, learning_rate=0.01, data_aug=False, loss="ce", metric="accuracy", out="fig.png"):
+    def __init__ (self, model="CnnVanilla", dataset="PokemonDataset", optimizer="Adam", batch_size=64, num_epochs=10, validation=0.1, learning_rate=0.01, data_aug=False, loss="ce", metric="accuracy", out="fig.png"):
         self.model = model
         self.dataset = dataset
         #check if dataset is in torchvision.datasets.
@@ -27,6 +27,7 @@ class Trainer():
             train_set = getattr(datasets, dataset)(root='./datasets', train=True, download=True, transform=base_transform)
             test_set = getattr(datasets, dataset)(root='./datasets', train=False, download=True, transform=base_transform)
             nb_classes = len(train_set.classes)
+            nb_input_channels = train_set[0][0].shape[0]
         else:
             print(f"Dataset {dataset} not found in torchvision.datasets")
             print("checking for custom dataset")
@@ -39,9 +40,11 @@ class Trainer():
                 spec = spec_from_file_location(module_name, dataset_path)
                 dataset_module = module_from_spec(spec)
                 spec.loader.exec_module(dataset_module)
-                train_set = dataset_module.train_set
-                test_set = dataset_module.test_set
-                nb_classes = dataset_module.nb_classes
+                dataset_class = getattr(dataset_module, dataset)
+                train_set = dataset_class(root_dir=f'./datasets/{dataset}/Train', transform=base_transform, train=True)
+                test_set = dataset_class(root_dir=f'./datasets/{dataset}/Test', transform=base_transform, train=False)
+                nb_classes = len(train_set.get_classes())
+                nb_input_channels = train_set.get_nb_input_channels()
             else:
                 print(f"Dataset {dataset} not found in datasets_class")
                 print("Please provide a valid dataset")
@@ -67,7 +70,7 @@ class Trainer():
             spec.loader.exec_module(model_module)
             
             model_class = getattr(model_module, model)
-            model = model_class(num_classes=nb_classes)
+            model = model_class(num_classes=nb_classes, input_channels=nb_input_channels)
             
         else:
             print(f"Model {model} not found in models")
