@@ -57,3 +57,9 @@ class EfficientChannelAttention(nn.Module):
         output = output.view(output.size(0), -1, 1, 1)
         output = x * output
         return output
+    
+""" 
+TODO: - CBAM : Convolutional Block Attention Module
+      - STN : Spatial Transformer Network
+      - SA : Self Attention / Intra-Attention
+"""
