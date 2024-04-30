@@ -9,13 +9,13 @@ class ResidualBlock(nn.Module):
     to reduce it to out_channels and sum it up to the original input,
     """
     
-    def __init__(self, in_channels,out_channels, depth_wise=True, bottleneck=False):
+    def __init__(self, in_channels,out_channels, depth_wise=True, bottleneck=False, downsample=2):
         super(ResidualBlock, self).__init__()
         midle_channels =  in_channels + out_channels 
-        if midle_channels % 2 == 0:
-            midle_channels = midle_channels // 2
+        if midle_channels % downsample == 0:
+            midle_channels = midle_channels // downsample
         else:
-            midle_channels = midle_channels // 2 + 1
+            midle_channels = midle_channels // downsample + 1
             
         current = in_channels
         
@@ -58,13 +58,13 @@ class DenseBlock(nn.Module):
     and then concatenate the output with the original input
     """
     #Dense block with 3 layers (bn-relu-conv1-conv2)
-    def __init__(self, in_channels, depth_wise=True, bottleneck=False):
+    def __init__(self, in_channels, depth_wise=True, bottleneck=False, downsample=2):
         super(DenseBlock, self).__init__()
         midle_channels =  in_channels 
-        if in_channels % 2 == 0:
-            midle_channels = midle_channels // 2
+        if in_channels % downsample == 0:
+            midle_channels = midle_channels // downsample
         else:
-            midle_channels = midle_channels // 2 + 1
+            midle_channels = midle_channels // downsample + 1
             
         current = in_channels
         
@@ -87,7 +87,7 @@ class DenseBlock(nn.Module):
         self.dense = nn.Sequential(*conv_layers)
         self.regularise = nn.Sequential(
             nn.Conv2d(in_channels=in_channels*2, out_channels=in_channels*2, kernel_size=1, stride=1, padding=0,bias=False),
-            nn.BatchNorm2d(nn.BatchNorm2d(in_channels)*2),
+            nn.BatchNorm2d(in_channels*2),
             nn.ReLU(inplace=True)
             )
         
@@ -118,7 +118,7 @@ class ConvBottleneck(nn.Module):
             conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1, groups=median_channels,bias=False))
             conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=1, stride=1, padding=0,bias=False))
         else :  
-            conv_layers.append(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1)
+            conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=median_channels, kernel_size=3, stride=1, padding=1))
         conv_layers.append(nn.BatchNorm2d(median_channels))
         conv_layers.append(nn.ReLU(inplace=True))
         conv_layers.append(nn.Conv2d(in_channels=median_channels, out_channels=in_channels, kernel_size=1, stride=1, padding=0,bias=False))
