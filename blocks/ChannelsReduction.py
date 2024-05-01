@@ -23,7 +23,7 @@ class FireBlock(nn.Module):
         )
         self.expand1 = nn.Sequential(
             nn.Conv2d(in_channels=squeeze, out_channels=expand1, kernel_size=1, stride=1, padding=0,bias=False),
-            nn.BatchNorm2d(squeeze),
+            nn.BatchNorm2d(expand1),
             nn.ReLU(inplace=True)
         )
         self.expand2 = nn.Sequential( 
