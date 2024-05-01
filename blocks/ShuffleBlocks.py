@@ -84,7 +84,7 @@ class InterleavedGroupConvolutionModule(nn.Module):
         self.L = L
         self.M = M
         self.in_channels = in_channels
-        self.primary = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, groups=L,bias=False)
+        self.primary = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=3, groups=L,bias=False, padding=1)
         self.secondary = nn.Conv2d(in_channels=in_channels, out_channels=in_channels, kernel_size=1, groups=M,bias=False)
         self.bn = nn.BatchNorm2d(in_channels)
         self.relu = nn.ReLU(inplace=True)
