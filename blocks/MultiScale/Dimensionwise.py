@@ -84,15 +84,14 @@ class ASPPModule(nn.Module):
         self.branches.append(nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(in_channels, branches_out_channels[-1], kernel_size=1, bias=False),
-            nn.BatchNorm2d(branches_out_channels[-1]),
-            nn.ReLU(inplace=True)),
-            nn.Upsample(size=(h,w), mode='bilinear'))
+            nn.ReLU(inplace=True),
+            nn.Upsample(size=(h,w), mode='bilinear')))
         self.branches.append(nn.Sequential(
             nn.Conv2d(in_channels,branches_out_channels[-2], kernel_size=1, bias=False),
             nn.BatchNorm2d(branches_out_channels[-2]),
             nn.ReLU(inplace=True)))
         self.conv = nn.Sequential(
-            nn.Conv2d(2+len(rates), out_channels, kernel_size=1, bias=False),
+            nn.Conv2d(sum(branches_out_channels), out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True))
         
