@@ -11,21 +11,21 @@ class InceptionModuleV1(nn.Module):
     """
 
     def __init__(self,in_channels, out1x1, out3x3, out5x5, outmaxpool, downsample3x3=2,downsample5x5=8):
-
+        super(InceptionModuleV1, self).__init__()
         self.conv1x1 = nn.Conv2d(in_channels=in_channels, out_channels=out1x1, kernel_size=1, stride=1, padding=0,bias=False)
 
         self.conv3x3 = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=np.ciel(in_channels//downsample3x3), kernel_size=1, stride=1, padding=0,bias=False),
-            nn.BatchNorm2d(np.ciel(in_channels//downsample3x3)),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels//downsample3x3, kernel_size=1, stride=1, padding=0,bias=False),
+            nn.BatchNorm2d(in_channels//downsample3x3),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=np.ciel(in_channels//downsample3x3), out_channels=out3x3, kernel_size=3, stride=1, padding=1,bias=False),
+            nn.Conv2d(in_channels=in_channels//downsample3x3, out_channels=out3x3, kernel_size=3, stride=1, padding=1,bias=False),
             )
         
         self.conv5x5 = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=np.ciel(in_channels//downsample5x5), kernel_size=1, stride=1, padding=0,bias=False),
-            nn.BatchNorm2d(np.ciel(in_channels//downsample5x5)),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels//downsample5x5, kernel_size=1, stride=1, padding=0,bias=False),
+            nn.BatchNorm2d(in_channels//downsample5x5),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=np.ciel(in_channels//downsample5x5), out_channels=out5x5, kernel_size=5, stride=1, padding=2,bias=False),
+            nn.Conv2d(in_channels=in_channels//downsample5x5, out_channels=out5x5, kernel_size=5, stride=1, padding=2,bias=False),
             )
         
         self.maxpool = nn.Sequential(
@@ -51,21 +51,21 @@ class InceptionModuleV2Base(nn.Module):
     convolution. 
     """
     def __init__(self,in_channels, out1x1, out3x3, out2_3x3, outmaxpool, downsample3x3=2,downsample2_3x3=4):
-        
+        super(InceptionModuleV2Base, self).__init__()
         self.conv1x1 = nn.Conv2d(in_channels=in_channels, out_channels=out1x1, kernel_size=1, stride=1, padding=0,bias=False)
         
         self.conv3x3 = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=np.ciel(in_channels//downsample3x3), kernel_size=1, stride=1, padding=0,bias=False),
-            nn.BatchNorm2d(np.ciel(in_channels//downsample3x3)),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels//downsample3x3, kernel_size=1, stride=1, padding=0,bias=False),
+            nn.BatchNorm2d(in_channels//downsample3x3),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=np.ciel(in_channels//downsample3x3), out_channels=out3x3, kernel_size=3, stride=1, padding=1,bias=False)
+            nn.Conv2d(in_channels=in_channels//downsample3x3, out_channels=out3x3, kernel_size=3, stride=1, padding=1,bias=False)
             )
         
         self.conv2_3x3 = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=np.ciel(in_channels//downsample2_3x3), kernel_size=1, stride=1, padding=0,bias=False),
-            nn.BatchNorm2d(np.ciel(in_channels//downsample2_3x3)),
+            nn.Conv2d(in_channels=in_channels, out_channels=in_channels//downsample2_3x3, kernel_size=1, stride=1, padding=0,bias=False),
+            nn.BatchNorm2d(in_channels//downsample2_3x3),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=np.ciel(in_channels//downsample2_3x3), out_channels=out2_3x3, kernel_size=3, stride=1, padding=1,bias=False),
+            nn.Conv2d(in_channels=in_channels//downsample2_3x3, out_channels=out2_3x3, kernel_size=3, stride=1, padding=1,bias=False),
             nn.BatchNorm2d(out2_3x3),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=out2_3x3, out_channels=out2_3x3, kernel_size=3, stride=1, padding=1,bias=False)
@@ -92,30 +92,31 @@ class InceptionModuleV2Factorize(nn.Module):
     with n a parameter of the module. 
     """
     def __init__(self,in_channels,n, out1x1, outnxn, out2_nxn, outmaxpool):
+        super(InceptionModuleV2Factorize, self).__init__()
         pad = n//2
         self.conv1x1 = nn.Conv2d(in_channels=in_channels, out_channels=out1x1, kernel_size=1, stride=1, padding=0,bias=False)
         self.convnxn = nn.Sequential(
                             nn.Conv2d(in_channels=in_channels, out_channels=outnxn, kernel_size=1, stride=1, padding=0,bias=False),
                             nn.BatchNorm2d(outnxn),
                             nn.ReLU(inplace=True),
-                            nn.Conv2d(in_channels=outnxn, out_channels=outnxn, kernel_size=(1,n), stride=1, padding=pad,bias=False),
+                            nn.Conv2d(in_channels=outnxn, out_channels=outnxn, kernel_size=(1,n), stride=1, padding=(0,pad),bias=False),
                             nn.BatchNorm2d(outnxn),
                             nn.ReLU(inplace=True),
-                            nn.Conv2d(in_channels=outnxn, out_channels=outnxn, kernel_size=(n,1), stride=1, padding=pad,bias=False))
+                            nn.Conv2d(in_channels=outnxn, out_channels=outnxn, kernel_size=(n,1), stride=1, padding=(pad,0),bias=False))
         self.conv2_nxn = nn.Sequential(
                             nn.Conv2d(in_channels=in_channels, out_channels=out2_nxn, kernel_size=1, stride=1, padding=0,bias=False),
                             nn.BatchNorm2d(out2_nxn),
                             nn.ReLU(inplace=True),
-                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(1,n), stride=1, padding=pad,bias=False),
+                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(1,n), stride=1, padding=(0,pad),bias=False),
                             nn.BatchNorm2d(out2_nxn),
                             nn.ReLU(inplace=True),
-                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(n,1), stride=1, padding=pad,bias=False),
+                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(n,1), stride=1, padding=(pad,0),bias=False),
                             nn.BatchNorm2d(out2_nxn),
                             nn.ReLU(inplace=True),
-                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(1,n), stride=1, padding=pad,bias=False),
+                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(1,n), stride=1, padding=(0,pad),bias=False),
                             nn.BatchNorm2d(out2_nxn),
                             nn.ReLU(inplace=True),
-                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(n,1), stride=1, padding=pad,bias=False))
+                            nn.Conv2d(in_channels=out2_nxn, out_channels=out2_nxn, kernel_size=(n,1), stride=1, padding=(pad,0),bias=False))
         self.maxpool = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
             nn.Conv2d(in_channels=in_channels, out_channels=outmaxpool, kernel_size=1, stride=1, padding=0,bias=False)
@@ -134,6 +135,7 @@ class InceptionModuleV2Wide(nn.Module):
     Widest module of the InceptionV2 to avoid representational bottleneck
     """
     def __init__(self,in_channels, out1x1, out3x3, out2_3x3, outmaxpool):
+        super(InceptionModuleV2Wide, self).__init__()
         self.conv1x1 = nn.Conv2d(in_channels=in_channels, out_channels=out1x1, kernel_size=1, stride=1, padding=0,bias=False)
         
         self.branch2_3x3Part1 = nn.Sequential(
@@ -143,15 +145,15 @@ class InceptionModuleV2Wide(nn.Module):
             nn.Conv2d(in_channels=out3x3, out_channels=out3x3, kernel_size=3, stride=1, padding=1,bias=False),
             nn.BatchNorm2d(out3x3),
             nn.ReLU(inplace=True))
-        self.branch2_3x3Part2A = nn.Conv2d(in_channels=out3x3, out_channels=out3x3, kernel_size=(1,3), stride=1, padding=(0,1),bias=False)
-        self.branch2_3x3Part2B = nn.Conv2d(in_channels=out3x3, out_channels=out3x3, kernel_size=(3,1), stride=1, padding=(1,0),bias=False)
+        self.branch2_3x3Part2A = nn.Conv2d(in_channels=out3x3, out_channels=out3x3//2, kernel_size=(1,3), stride=1, padding=(0,1),bias=False)
+        self.branch2_3x3Part2B = nn.Conv2d(in_channels=out3x3, out_channels=out3x3//2, kernel_size=(3,1), stride=1, padding=(1,0),bias=False)
         
         self.branch3x3Part1 = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=out2_3x3, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(out2_3x3),
             nn.ReLU(inplace=True))
-        self.branch3x3Part2A = nn.Conv2d(in_channels=out2_3x3, out_channels=out2_3x3, kernel_size=(1,3), stride=1, padding=(0,1),bias=False)
-        self.branch3x3Part2B = nn.Conv2d(in_channels=out2_3x3, out_channels=out2_3x3, kernel_size=(3,1), stride=1, padding=(1,0),bias=False)
+        self.branch3x3Part2A = nn.Conv2d(in_channels=out2_3x3, out_channels=out2_3x3//2, kernel_size=(1,3), stride=1, padding=(0,1),bias=False)
+        self.branch3x3Part2B = nn.Conv2d(in_channels=out2_3x3, out_channels=out2_3x3//2, kernel_size=(3,1), stride=1, padding=(1,0),bias=False)
         
         self.maxpool = nn.Sequential( 
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
@@ -176,6 +178,7 @@ class InceptionModulev2Pooling(nn.Module):
     pands the filter banks.
     """
     def __init__(self,in_channels, out3x3, out2_3x3):
+        super(InceptionModulev2Pooling, self).__init__()
         self.maxpool = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             )
@@ -183,13 +186,13 @@ class InceptionModulev2Pooling(nn.Module):
             nn.Conv2d(in_channels=in_channels, out_channels=out3x3, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(out3x3),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=in_channels, out_channels=out3x3, kernel_size=3, stride=2, padding=1,bias=False),
+            nn.Conv2d(in_channels=out3x3, out_channels=out3x3, kernel_size=3, stride=2, padding=1,bias=False),
             )
         self.branch2_3x3 = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=out2_3x3, kernel_size=1, stride=1, padding=0,bias=False),
             nn.BatchNorm2d(out2_3x3),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=in_channels, out_channels=out2_3x3, kernel_size=3, stride=1, padding=1,bias=False),
+            nn.Conv2d(in_channels=out2_3x3, out_channels=out2_3x3, kernel_size=3, stride=1, padding=1,bias=False),
             nn.BatchNorm2d(out2_3x3),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=out2_3x3, out_channels=out2_3x3, kernel_size=3, stride=2, padding=1,bias=False),
