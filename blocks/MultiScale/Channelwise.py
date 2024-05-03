@@ -31,6 +31,7 @@ class HierarshicalSplitBlock(nn.Module):
 
     def forward(self, x):
         groups = torch.chunk(x, self.s, 1)
+        groups = list(groups)
         output = [groups[0]]
         for i in range(1, self.s):
             group = self.groups[i-1](groups[i])
