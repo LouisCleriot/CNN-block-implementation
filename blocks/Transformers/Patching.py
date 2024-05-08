@@ -50,3 +50,53 @@ class PatchEmbedding(nn.Module):
         x += self.pos_embedding
         
         return x
+
+class PatchEmbeddingConv(nn.Module):
+    """PatchEmbeddingConv is a module create the patch embeddings using a convolutional
+    layer. The module first applies a convolutional layer to the input image with a kernel
+    and stride size equal to the patch size, and an output channel equal to the dimension of
+    the embeddings. The output of the convolutional layer is then reshaped to create the patch
+    embeddings. The module can also add a classification token to the input embeddings.
+
+    Args:
+        image_size (int or tuple): The size of the input image.
+        patch_size (int or tuple): The size of the patch.
+        in_channels (int): The number of channels in the input image.
+        embed_dim (int): The dimension of the output embeddings.
+        classifier_token (bool): Whether to add a classification token to the input embeddings. 
+    """
+    def __init__(self, img_size, patch_size, in_channels, embed_dim, cls_token=True):
+        super(PatchEmbeddingConv, self).__init__()
+        
+        if isinstance(patch_size, int):
+            patch_size = (patch_size, patch_size)
+        if isinstance(img_size, int):
+            img_size = (img_size, img_size)
+            
+        patchWidth, patchHeight = patch_size
+        imgWidth, imgHeight = img_size
+        numberOfPatches = (imgWidth//patchWidth)*(imgHeight//patchHeight)
+        
+        self.conv = nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
+        
+        if cls_token:
+            self.cls_token = nn.Parameter(torch.randn(1,1,embed_dim))
+            numberOfPatches += 1
+        else:
+            self.cls_token = None
+        
+        self.pos_embedding = nn.Parameter(torch.randn(1,numberOfPatches,embed_dim))
+        
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.permute(0,2,3,1)
+        x = x.reshape(x.size(0), -1, x.size(-1))
+        
+        if self.cls_token is not None:
+            cls_token = self.cls_token.expand(x.size(0), -1, -1)
+            x = torch.cat((cls_token, x), dim=1)
+        
+        # Add positional embedding
+        x += self.pos_embedding
+        
+        return x
