@@ -62,3 +62,52 @@ TODO: - CBAM : Convolutional Block Attention Module
       - STN : Spatial Transformer Network
       - SA : Self Attention / Intra-Attention
 """
+class SelfAttention(nn.Module):
+    """Attention mechanism used in the Transformer model. It's used to compute the
+    attention weights between elements in the input sequence. We use 3 matrices to
+    compute the attention weights: the query matrix, the key matrix and the value matrix.
+    Args:
+        dk (int): The dimension of the key and query matrix.
+        dv (int): The dimension of the value matrix.
+        dmodel (int): The dimension of the input embeddings.
+        heads (int): The number of heads in the multi-head attention.
+        parallel (bool): Whether to do the computation in parallel or not.
+    """
+    def __init__(self,dmodel, dk, dv):
+        super(SelfAttention, self).__init__()
+        
+        self.query = nn.Linear(dmodel,dk,bias=False)
+        self.key = nn.Linear(dmodel,dk,bias=False)
+        self.value = nn.Linear(dmodel,dv,bias=False)
+        
+    def forward(self, x):
+        query = self.query(x)
+        key = self.key(x)
+        value = self.value(x)
+        
+        attention = torch.matmul(query,key.transpose(-2,-1))
+        attention = F.softmax(attention, dim=-1)
+        output = torch.matmul(attention,value)
+        
+        return output
+    
+class MultiHeadAttention(nn.Module):
+    """Multi-head attention mechanism used in the Transformer model. It's used to compute the
+    attention weights between elements in the input sequence. We use 3 matrices to
+    compute the attention weights: the query matrix, the key matrix and the value matrix.
+    Args:
+        dk (int): The dimension of the key and query matrix.
+        dv (int): The dimension of the value matrix.
+        dmodel (int): The dimension of the input embeddings.
+        heads (int): The number of heads in the multi-head attention.
+    """
+    def __init__(self,dmodel,heads, dk=None, dv=None):
+        super(MultiHeadAttention, self).__init__()
+        dk = dk if dk else dmodel // heads
+        dv = dv if dv else dmodel // heads
+        
+        self.heads =nn.ModuleList([SelfAttention(dmodel, dk, dv) for _ in range(heads)])
+        
+    def forward(self, x):
+        return torch.cat([head(x) for head in self.heads],dim=-1)
+    

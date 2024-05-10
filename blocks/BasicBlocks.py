@@ -133,3 +133,16 @@ class ConvBottleneck(nn.Module):
             output += x
             output = F.relu(output)
         return output
+    
+class ResAdd(nn.Module):
+    """
+    This block takes a module and applies it to the input, then adds the input
+    to the output of the module.
+    """
+    def __init__(self, module):
+        super(ResAdd, self).__init__()
+        self.module = module
+    def forward(self, x):
+        output = self.module(x)
+        output += x
+        return output
