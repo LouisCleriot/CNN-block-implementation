@@ -105,8 +105,8 @@ class ConvolutionalTokenEmbeding(nn.Module):
     """Module use in Convolutional Vision Transformer to process 
     a 2D image or a reshaped tensor into tokens map with new dimension
     (B,C,H,W) using convolutional layer. We then reshape the output tensor
-    into a 1D tensor with shape (B, C, new_H * new_W) and normalize the
-    tensor using layer normalization.
+    into a 1D tensor with shape (B, C, new_H * new_W) if the flag is set to true,
+    which is not use in CvT and normalize the tensor using layer normalization.
 
     Args:
         input_channels (int): The number of channels in the input image.
@@ -114,8 +114,9 @@ class ConvolutionalTokenEmbeding(nn.Module):
         kernel_size (int or tuple): The size of the convolutional kernel.
         stride (int or tuple): The stride of the convolutional kernel.
         padding (int or tuple): The padding of the convolutional kernel.
+        reshape (bool): Whether to reshape the output tensor or not.
     """
-    def __init__(self, input_channels, output_channels, kernel_size, stride, padding):
+    def __init__(self, input_channels, output_channels, kernel_size, stride, padding, reshape=False):
         super(ConvolutionalTokenEmbeding, self).__init__()
         
         if isinstance(kernel_size, int):
@@ -127,13 +128,18 @@ class ConvolutionalTokenEmbeding(nn.Module):
         
         self.conv = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
         self.norm = nn.LayerNorm(output_channels)
+        self.reshape = reshape 
         
     def forward(self, x):
         B, C, H, W = x.size()
         x = self.conv(x)
         B, C, new_H, new_W = x.size()
-        x = x.reshape(B,C,-1)
-        x = x.transpose(1,2)
-        x = self.norm(x)
-        x = x.transpose(1,2)
+        if self.reshape:
+            x = x.view(B, new_H * new_W, C)
+            x = self.norm(x)
+            x = x.permute(0, 2, 1)
+        else:
+            x = x.permute(0, 2, 3, 1)
+            x = self.norm(x)
+            x = x.permute(0, 3, 1, 2)
         return x
