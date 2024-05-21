@@ -128,10 +128,10 @@ class ConvolutionalTokenEmbeding(nn.Module):
             input_dim = (input_dim, input_dim)
         
         self.conv = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
-        self.cout = output_channels
         
     def forward(self, x):
         B, C, H, W = x.size()
         x = self.conv(x)
-        x = x.reshape(B,self.cout,-1)
+        B, C, new_H, new_W = x.size()
+        x = x.reshape(B,C,-1)
         return x
