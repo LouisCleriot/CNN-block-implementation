@@ -100,3 +100,38 @@ class PatchEmbeddingConv(nn.Module):
         x += self.pos_embedding
         
         return x
+    
+class ConvolutionalTokenEmbeding(nn.Module):
+    """Module use in Convolutional Vision Transformer to process 
+    a 2D image or a reshaped tensor into tokens map with new dimension
+    (B,C,H,W) using convolutional layer. We then reshape the output tensor
+    into a 1D tensor with shape (B, C, new_H * new_W).
+
+    Args:
+        input_dim (int or tuple): The size of the input image.
+        input_channels (int): The number of channels in the input image.
+        kernel_size (int or tuple): The size of the convolutional kernel.
+        stride (int or tuple): The stride of the convolutional kernel.
+        padding (int or tuple): The padding of the convolutional kernel.
+        output_channels (int): The number of channels in the output tensor.
+    """
+    def __init__(self, input_dim, input_channels, output_channels, kernel_size, stride, padding):
+        super(ConvolutionalTokenEmbeding, self).__init__()
+        
+        if isinstance(kernel_size, int):
+            kernel_size = (kernel_size, kernel_size)
+        if isinstance(stride, int):
+            stride = (stride, stride)
+        if isinstance(padding, int):
+            padding = (padding, padding)
+        if isinstance(input_dim, int):
+            input_dim = (input_dim, input_dim)
+        
+        self.conv = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
+        self.cout = output_channels
+        
+    def forward(self, x):
+        B, C, H, W = x.size()
+        x = self.conv(x)
+        x = x.reshape(B,self.cout,-1)
+        return x
