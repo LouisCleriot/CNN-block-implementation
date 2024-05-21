@@ -105,15 +105,15 @@ class ConvolutionalTokenEmbeding(nn.Module):
     """Module use in Convolutional Vision Transformer to process 
     a 2D image or a reshaped tensor into tokens map with new dimension
     (B,C,H,W) using convolutional layer. We then reshape the output tensor
-    into a 1D tensor with shape (B, C, new_H * new_W).
+    into a 1D tensor with shape (B, C, new_H * new_W) and normalize the
+    tensor using layer normalization.
 
     Args:
-        input_dim (int or tuple): The size of the input image.
         input_channels (int): The number of channels in the input image.
+        output_channels (int): The number of channels in the output tensor.
         kernel_size (int or tuple): The size of the convolutional kernel.
         stride (int or tuple): The stride of the convolutional kernel.
         padding (int or tuple): The padding of the convolutional kernel.
-        output_channels (int): The number of channels in the output tensor.
     """
     def __init__(self, input_channels, output_channels, kernel_size, stride, padding):
         super(ConvolutionalTokenEmbeding, self).__init__()
@@ -126,10 +126,14 @@ class ConvolutionalTokenEmbeding(nn.Module):
             padding = (padding, padding)
         
         self.conv = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
+        self.norm = nn.LayerNorm(output_channels)
         
     def forward(self, x):
         B, C, H, W = x.size()
         x = self.conv(x)
         B, C, new_H, new_W = x.size()
         x = x.reshape(B,C,-1)
+        x = x.transpose(1,2)
+        x = self.norm(x)
+        x = x.transpose(1,2)
         return x
