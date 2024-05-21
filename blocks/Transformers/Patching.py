@@ -115,7 +115,7 @@ class ConvolutionalTokenEmbeding(nn.Module):
         padding (int or tuple): The padding of the convolutional kernel.
         output_channels (int): The number of channels in the output tensor.
     """
-    def __init__(self, input_dim, input_channels, output_channels, kernel_size, stride, padding):
+    def __init__(self, input_channels, output_channels, kernel_size, stride, padding):
         super(ConvolutionalTokenEmbeding, self).__init__()
         
         if isinstance(kernel_size, int):
@@ -124,8 +124,6 @@ class ConvolutionalTokenEmbeding(nn.Module):
             stride = (stride, stride)
         if isinstance(padding, int):
             padding = (padding, padding)
-        if isinstance(input_dim, int):
-            input_dim = (input_dim, input_dim)
         
         self.conv = nn.Conv2d(input_channels, output_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False)
         
