@@ -51,7 +51,7 @@ class VisionTransformer(nn.Module):
                 nn.GELU()
                 )
             encoder.append(nn.Sequential(ResAdd(module2)))
-        self.encoder = nn.Sequential(*self.encoder)
+        self.encoder = nn.Sequential(*encoder)
         self.MLPHead = nn.Sequential(
             nn.LayerNorm(embed_dim),
             nn.Linear(embed_dim, (embed_dim+n_class)//2),
