@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import rearrange
 
 class SqueezeAndExciteBlock(nn.Module):
     """
@@ -111,3 +112,91 @@ class MultiHeadAttention(nn.Module):
     def forward(self, x):
         return torch.cat([head(x) for head in self.heads],dim=-1)
     
+class ConvProjectionLayer(nn.Module):
+    
+    def __init__(self, in_channels, out_channels, kernel_size, channels_expansion=1, nb_heads=1, squeeze_factor=2, cls=False, last=False):
+        super(ConvProjectionLayer, self).__init__()
+        self.nb_heads = nb_heads
+        self.out_channels = out_channels
+        self.last = last
+        self.cls_token = nn.Parameter(torch.randn(1, out_channels,1)) if cls else None
+        self.query_conv = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels, kernel_size, stride=1, padding=kernel_size//2, groups=in_channels),
+            nn.BatchNorm2d(in_channels))
+        self.query_1D = nn.Conv1d(in_channels, out_channels, 1, stride=1, padding=0, groups=nb_heads)
+        self.key_conv = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels, kernel_size, stride=squeeze_factor, padding=kernel_size//2, groups=in_channels),
+            nn.BatchNorm2d(in_channels))
+        self.key_1D = nn.Conv1d(in_channels, out_channels, 1, stride=1, padding=0, groups=nb_heads)
+        self.value_conv = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels, kernel_size, stride=squeeze_factor, padding=kernel_size//2, groups=in_channels),
+            nn.BatchNorm2d(in_channels))
+        self.value_1D = nn.Conv1d(in_channels, out_channels, 1, stride=1, padding=0, groups=nb_heads)
+        self.LN = nn.LayerNorm(out_channels)        
+        self.FC_MLP = nn.Sequential(
+            nn.Linear(out_channels, out_channels * channels_expansion),
+            nn.GELU(),
+            nn.Linear( out_channels * channels_expansion, out_channels))
+        
+        self.scale = 1/((out_channels // nb_heads)**0.5)
+        
+    def forward(self, x):
+        B, C, H, W = x.shape
+        
+        #depthwise convolutions
+        q = self.query_conv(x)
+        k = self.key_conv(x)
+        v = self.value_conv(x)
+        
+        #reshape the output to be used in the pointwise convolutions (linear layers because of the cls)
+        q = q.view(B, C, -1)
+        k = k.view(B, C, -1)
+        v = v.view(B, C, -1)
+        
+        #add the cls token
+        if self.cls_token is not None:
+            q = torch.cat((self.cls_token, q), dim=-1)
+            k = torch.cat((self.cls_token, k), dim=-1)
+            v = torch.cat((self.cls_token, v), dim=-1)
+        
+        #pointwise convolutions
+        q = self.query_1D(q)
+        k = self.key_1D(k)
+        v = self.value_1D(v)
+        
+        q = q.view(B, self.nb_heads, -1, q.size(-1))
+        k = k.view(B, self.nb_heads, -1, k.size(-1))
+        v = v.view(B, self.nb_heads, -1, v.size(-1))
+        
+        #attention mechanism
+        attn = torch.einsum('bhdi,bhdj->bhij', q, k) * self.scale
+        attn = F.softmax(attn, dim=-1)
+        attn = torch.einsum('bhij,bhdj->bhdi', attn, v)
+        attn = attn.reshape(B, self.out_channels, -1)
+        
+        #add the cls token if needed
+        x = x.reshape(B, C, -1)
+        if self.cls_token is not None:
+            x = torch.cat((self.cls_token, x), dim=-1)
+
+        x = x + attn
+        x = x.permute(0, 2, 1)  # (B, T, C)
+        x = self.LN(x)
+        
+        x = self.FC_MLP(x)
+        if self.cls_token is None: #normal case (no cls token)
+            x = x.view(B, C, H, W)
+            attn = attn.view(B, C, H, W)
+            x= x+attn
+        else: #cls token case
+            x = x.permute(0, 2, 1)  # (B, C, T)
+            if self.last: #last layer (cls token is returned as output)
+                x = x[:,:,0]
+                x = x+attn[:,:,0]
+            else: #not the last layer (cls token is added to the input)
+                x = x[:,:,1:]
+                x = x.view(B, C, H, W)
+                attn = attn[:,:,1:]
+                attn = attn.view(B, C, H, W)
+                x = x+attn
+        return x
