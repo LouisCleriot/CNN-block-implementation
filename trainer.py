@@ -10,6 +10,7 @@ import models
 from sys import exit
 
 base_transform = transforms.Compose([
+        transforms.Resize((100, 100)),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
@@ -17,7 +18,7 @@ dataset_directory = './datasets_class'
 model_directory = './models'
 
 class Trainer():
-    def __init__ (self, model="CnnVanilla", dataset="PokemonDataset", optimizer="Adam", batch_size=64, num_epochs=10, validation=0.1, learning_rate=0.01, data_aug=False, loss="ce", metric="accuracy", out="fig.png"):
+    def __init__ (self, model="ConvMixer", dataset="MathDataset", optimizer="Adam", batch_size=64, num_epochs=10, validation=0.1, learning_rate=0.01, data_aug=False, loss="ce", metric="accuracy", out="fig.png", **model_args):
         self.model = model
         self.dataset = dataset
         #check if dataset is in torchvision.datasets.
@@ -70,12 +71,16 @@ class Trainer():
             spec.loader.exec_module(model_module)
             
             model_class = getattr(model_module, model)
-            model = model_class(num_classes=nb_classes, input_channels=nb_input_channels)
             
         else:
             print(f"Model {model} not found in models")
             print("Please provide a valid model")
             exit()
+        params = {k: v for k, v in model_args.items()}
+        params['num_classes'] = nb_classes
+        params['in_channels'] = nb_input_channels
+        model = model_class(**params)
+        
         self.model_trainer = CNNTrainTestManager(model=model,
                                         trainset=train_set,
                                         testset=test_set,
