@@ -17,12 +17,12 @@ class ConvMixerLayer(nn.Module):
     def __init__(self, embed_dim, kernel_size=9):
         super(ConvMixerLayer, self).__init__()
         self.depthwise = nn.Sequential(
-            nn.Conv1d(embed_dim, embed_dim, kernel_size, 1, padding=kernel_size//2, groups=embed_dim),
+            nn.Conv2d(embed_dim, embed_dim, kernel_size, 1, padding=kernel_size//2, groups=embed_dim),
             nn.GELU(),
             nn.BatchNorm2d(embed_dim))
             
         self.pointwise = nn.Sequential(
-            nn.Conv1d(embed_dim, embed_dim, 1, 1, 0),
+            nn.Conv2d(embed_dim, embed_dim, 1, 1, 0),
             nn.GELU(),
             nn.BatchNorm2d(embed_dim))
                 
