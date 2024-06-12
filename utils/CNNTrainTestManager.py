@@ -31,7 +31,8 @@ class CNNTrainTestManager(object):
                  batch_size=1,
                  validation=None,
                  use_cuda=False,
-                 metric="accuracy"):
+                 metric="accuracy",
+                 save="last"):
         """
         Args:
             model: model to train
@@ -65,6 +66,8 @@ class CNNTrainTestManager(object):
         elif metric == "f1":
             self.metric = self.f1_score
         self.metric_values = {}
+        self.save_type = save
+        self.best_metric = 0
 
     def train(self, num_epochs):
         """
@@ -125,7 +128,8 @@ class CNNTrainTestManager(object):
             self.metric_values['train_loss'].append(np.mean(train_losses))
             self.metric_values['train_acc'].append(np.mean(train_accuracies))
             self.evaluate_on_validation_set()
-
+        if self.save_type == "last":
+            torch.save(self.model.state_dict(), 'checkpoints/last_model.pth')
         print("Finished training.")
 
     def evaluate_on_validation_set(self):
